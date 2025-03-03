@@ -1,0 +1,22 @@
+---
+title: Class 8 Mini Project
+format: html
+---
+Preparing the data
+```{r}
+fna.data <- "WisconsinCancer.csv"
+wisc.df <- read.csv(fna.data, row.names = 1)
+View(wisc.df)
+```
+
+Omit the first column and move it to a diagnosis vector
+```{r}
+wisc.data <- wisc.df[,-1]
+diagnosis <- as.factor(wisc.df$diagnosis)
+```
+Exploratory Data Analysis
+```{r}
+View(wisc.data)
+dim(wisc.data)
+```
+

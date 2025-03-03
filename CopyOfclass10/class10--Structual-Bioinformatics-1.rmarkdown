@@ -1,0 +1,327 @@
+---
+title: "class10StructualBioinformatics"
+author:"Hugh (Trevor) Redford PID: A17067426"
+date: 2/6/2025
+format: pdf
+---
+
+
+
+# Introduction to the RCSB Protein Data Bank (PDB)
+
+
+
+```{r}
+pdbData <- "Data Export Summary.csv"
+pdbdb <- read.csv(pdbData, row.names = 1)
+head(pdbdb)
+```
+
+
+
+
+> Q1. What percentage of structures in the PDB are solved by X-Ray and Electron Microscopy?
+
+
+
+
+```{r}
+# Data from the table
+total_pdb <- 231029
+xray <- 191374
+em <- 24836
+
+xray_percent <- (xray / total_pdb) * 100
+em_percent <- (em / total_pdb) * 100
+
+xray_percent
+em_percent
+
+```
+
+
+
+Approximately 82.84% of structures in the PDB were solved using X-ray crystallography, while 10.75% were determined using electron microscopy.
+
+> Q2. What proportion of structures in the PDB are proteins?
+
+
+
+```{r}
+# Data from the table 
+protein_only <- 199236
+protein_oligo <- 12822
+protein_na <- 14156
+
+
+protein_percent <- ((protein_only + protein_oligo + protein_na) / total_pdb) * 100
+
+
+protein_percent
+
+```
+
+
+
+Approximately 97.92% of the structures in the PDB are proteins.
+
+> Q3. Type HIV in the PDB website search box on the home page and determine how many HIV-1 protease structures are in the current PDB?
+
+There are currently 4683 structures of HIV-1 in PDB database
+
+# Visualizing the HIV-1 protease structure
+
+Utilizing molstar
+
+![Figure 1: HIV-1 protease](Fig1.png)
+
+![Figure 2: D25 amino acid shown](Fig2.png)
+
+> Q4. Water molecules normally have 3 atoms. Why do we see just one atom per water molecule in this structure?
+
+We only see the oxygen atoms of water molecules in the structure because displaying hydrogen atoms, along with all other atoms in the protein, would create an overly cluttered and complex visualization. This would obscure critical structural features such as side chains and binding pockets, making it difficult to analyze important interactions. Additionally, hydrogen atoms contribute minimally to the specific interactions that define the protein’s structure, meaning their absence does not significantly impact our ability to interpret bonding and molecular interactions.
+
+> Q5. There is a critical “conserved” water molecule in the binding site. Can you identify this water molecule? What residue number does this water molecule have
+
+Water molecule 308 is a key component of the binding site, playing a vital role in stabilizing the ligand within the protein. Its presence helps maintain proper interactions, contributing to the structural integrity and function of the protein-ligand complex.
+
+![Figure 3: An image highlighting the critical water molecule within the binding site. ](Fig4.png)
+
+> Q6. Generate and save a figure clearly showing the two distinct chains of HIV-protease along with the ligand. You might also consider showing the catalytic residues ASP 25 in each chain and the critical water (we recommend “Ball & Stick” for these side-chains). Add this figure to your Quarto document.
+
+![Figure 4: An image showcasing the critical water molecule, both protein chains, the ligand, and the D25 residues from each chain. ](Q6.png)
+
+
+# Introduction to Bio3D in R
+
+
+
+```{r}
+library(bio3d)
+```
+
+```{r}
+pdb <- read.pdb("1hsg")
+```
+
+```{r}
+pdb
+```
+
+```{r}
+attributes(pdb)
+```
+
+```{r}
+head(pdb$atom)
+```
+
+```{r}
+pdbseq(pdb)[25]
+```
+
+
+
+
+> Q7. How many amino acid residues are there in this pdb object?
+
+
+
+```{r}
+sum(pdb$calpha)
+```
+
+
+ This PDB object contains 198 amino acid residues.
+
+> Q8. Name one of the two non-protein residues?
+
+One of the non-protein residues in this structure is MK1.
+
+> Q9. How many protein chains are in this structure?
+
+
+
+```{r}
+unique(pdb$atom$chain)
+```
+
+
+
+There are two protein chains in the structure
+
+# Predicting Functional Motions of a Single Structure
+
+
+
+```{r}
+adk <- read.pdb("6s36")
+```
+
+```{r}
+adk
+```
+
+```{r}
+# Perform flexiblity prediction
+m <- nma(adk)
+```
+
+```{r}
+plot(m)
+```
+
+```{r}
+mktrj(m, file="adk_m7.pdb")
+```
+
+
+
+# Comparative structure analysis of Adenylate Kinase
+
+> Q10. Which of the packages above is found only on BioConductor and not CRAN?
+
+The package "msa" is exclusively available on BioConductor and not on CRAN.
+
+> Q11. Which of the above packages is not found on BioConductor or CRAN?
+
+The package "Bio3D" is not available on BioConductor or CRAN.
+
+> Q12. True or False? Functions from the devtools package can be used to install packages from GitHub and BitBucket?
+
+True
+
+
+
+```{r}
+library(bio3d)
+aa <- get.seq("1ake_A")
+```
+
+```{r}
+aa
+```
+
+
+
+> Q13. How many amino acids are in this sequence, i.e. how long is this sequence?
+
+There are 214 amino acids that make up the sequence according to the output seq above.
+
+
+
+```{r}
+# Blast or hmmer search 
+b <- blast.pdb(aa)
+```
+
+```{r}
+# Plot a summary of search results
+hits <- plot(b)
+```
+
+```{r}
+# List out some 'top hits'
+head(hits$pdb.id)
+```
+
+```{r}
+# Vector containing PDB codes for figure axis
+ids <- basename.pdb(as.character(pdb$id))
+print(pdb)
+
+# Draw schematic alignment (Will not format to pdf - only code shown)
+##plot(pdbs, labels=ids)
+```
+
+```{r}
+hits <- NULL
+hits$pdb.id <- c('1AKE_A','6S36_A','6RZE_A','3HPR_A','1E4V_A','5EJE_A','1E4Y_A','3X2S_A','6HAP_A','6HAM_A','4K46_A','3GMT_A','4PZL_A')
+```
+
+```{r}
+# Download releated PDB files
+files <- get.pdb(hits$pdb.id, path="pdbs", split=TRUE, gzip=TRUE)
+```
+
+```{r}
+# Align releated PDBs
+pdbs <- pdbaln(files, fit = TRUE, exefile="msa")
+```
+
+```{r}
+# Adjust margins to avoid errors
+par(mar = c(4, 4, 2, 2)) 
+
+# Vector containing PDB codes for figure axis
+ids <- basename.pdb(pdbs$id)
+
+# Draw schematic alignment
+plot(pdbs, labels=ids)
+```
+
+```{r}
+anno <- pdb.annotate(ids)
+unique(anno$source)
+```
+
+```{r}
+anno
+```
+
+
+
+
+# Principal Component Analysis
+
+
+
+```{r}
+# Perform PCA
+pc.xray <- pca(pdbs)
+plot(pc.xray)
+```
+
+```{r}
+# Calculate RMSD
+rd <- rmsd(pdbs)
+
+# Structure-based clustering
+hc.rd <- hclust(dist(rd))
+
+grps.rd <- cutree(hc.rd, k=3)
+plot(pc.xray, 1:2, col="grey50", bg=grps.rd, pch=21, cex=1)
+```
+
+```{r}
+#Plotting results with ggplot2
+library(ggplot2)
+library(ggrepel)
+
+df <- data.frame(PC1=pc.xray$z[,1], 
+                 PC2=pc.xray$z[,2], 
+                 col=as.factor(grps.rd),
+                 ids=ids)
+
+p <- ggplot(df) + 
+  aes(PC1, PC2, col=col, label=ids) +
+  geom_point(size=2) +
+  geom_text_repel(max.overlaps = 20) +
+  theme(legend.position = "none")
+p
+```
+
+```{r}
+# NMA of all structures
+modes <- nma(pdbs)
+```
+
+```{r}
+plot(modes, pdbs, col=grps.rd)
+```
+
+
+
+> Q14. What do you note about this plot? Are the black and colored lines similar or different? Where do you think they differ most and why?
+
+The plot shows that the `colored lines` fluctuate more, with distinct peaks and troughs, indicating greater conformational flexibility, while the `black line` remains relatively stable, suggesting rigidity. The largest differences occur in specific residue regions, where structural variations may influence protein function. This suggests that certain areas of the protein are more flexible, allowing for structural rearrangements that could impact its activity.

@@ -1,0 +1,29 @@
+---
+title: "class06Homework"
+Name: Hugh Redford
+format: pdf
+---
+
+Hugh Redford
+
+A17067426
+
+## Improving the Analysis Code
+
+```{r}
+# install.packages("bio3d")
+library(bio3d)
+
+# Input "x" is a PDB Entry ID # for a specific protein
+proteinPlot <- function(x) {
+  temp <- read.pdb(x)
+  temp.chainA <- trim.pdb(temp, chain = "A", elety = "CA")
+  temp.b <- temp.chainA$atom$b
+  plotb3(temp.b, sse = temp.chainA, typ = "l", ylab = "Bfactor")
+}
+
+```
+
+Function Description:
+
+The function 'proteinPlot' accepts a PDB entry ID as input, processes the corresponding protein structure, and generates a plot that compares the B-factor values and the corresponding residues of the protein.

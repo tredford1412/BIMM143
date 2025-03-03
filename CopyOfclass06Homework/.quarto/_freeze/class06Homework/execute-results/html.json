@@ -1,0 +1,17 @@
+{
+  "hash": "ffc32b81029350b0ce2a92fbcd680be3",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"class06Homework\"\nName: Hugh Redford\nFile: pdf\n---\n\n\n\n## Improving the Analysis Code\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# install.packages(\"bio3d\")\nlibrary(bio3d)\n\n# Input \"x\" is a PDB Entry ID # for a specific protein\nproteinPlot <- function(x) {\n  temp <- read.pdb(x)\n  temp.chainA <- trim.pdb(temp, chain = \"A\", elety = \"CA\")\n  temp.b <- temp.chainA$atom$b\n  plotb3(temp.b, sse = temp.chainA, typ = \"l\", ylab = \"Bfactor\")\n}\n```\n:::\n\n\n\n# Function Description:\n\n# The function 'proteinPlot' accepts a PDB entry ID as input, processes the corresponding protein structure and generates a plot that compares the B-factor values and the corresponding residues of the protein.\n",
+    "supporting": [
+      "class06Homework_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
