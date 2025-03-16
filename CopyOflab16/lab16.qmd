@@ -1,0 +1,115 @@
+---
+title: "lab16"
+format: html
+---
+
+## Analyzing sequencing data in the cloud
+Obtaining and processing SRA datasets on AWS
+
+
+## Background
+In bioinformatics we often need to analyze datasets that are too large (or would take too long) to analyze on our local lab computers. The goal of this hands-on session is to show you how to obtain and work with large biomolecular sequencing datasets using cloud computing resources. In particular, we will query, download, decompress and analyze data from NCBI’s main Sequence Read Archive (SRA) the worlds largest publicly available repository of high throughput sequencing data
+
+## Importing Kalisto Results
+
+```{r}
+library(tximport)
+library(readr)
+
+# Get correct folders (only original `_quant`, not `_quant(1)`)
+folders <- dir(pattern = "SRR[0-9]+_quant$", full.names = TRUE)
+
+# Extract sample names
+samples <- sub("_quant$", "", basename(folders))  
+
+# Construct paths to abundance.tsv files instead of abundance.h5
+files <- file.path(folders, "abundance.tsv")  
+names(files) <- samples  
+
+# Debugging: Verify paths
+print(files)
+print(file.exists(files))
+
+# Read in tximport using abundance.tsv
+txi.kallisto <- tximport(files, type = "kallisto", txOut = TRUE)
+```
+
+```{r}
+head(txi.kallisto$counts)
+```
+
+```{r}
+library(tximport)
+library(readr)
+
+# Construct a temporary tx2gene mapping (transcripts as genes)
+tx2gene <- data.frame(transcript_id = df$target_id, gene_id = df$target_id)
+
+# Run tximport with abundance.tsv
+txi.kallisto <- tximport(files, type = "kallisto", txOut = FALSE, tx2gene = tx2gene)
+
+# Check structure
+str(txi.kallisto)
+
+```
+
+```{r}
+BiocManager::install("EnsDb.Hsapiens.v86")  # Modify for your organism
+library(AnnotationDbi)
+library(EnsDb.Hsapiens.v86)
+
+# Generate tx2gene mapping
+tx2gene <- transcripts(EnsDb.Hsapiens.v86, columns = c("tx_id", "gene_id"), return.type = "data.frame")
+
+# Save for future use
+write.csv(tx2gene, "tx2gene.csv", row.names = FALSE)
+
+```
+
+```{r}
+# Install necessary packages if missing
+if (!requireNamespace("BiocManager", quietly = TRUE)) 
+    install.packages("BiocManager")
+
+BiocManager::install(c("AnnotationDbi", "EnsDb.Hsapiens.v86", "tximport", "readr"))
+
+# Load required libraries
+library(tximport)
+library(readr)
+library(AnnotationDbi)
+library(EnsDb.Hsapiens.v86)
+
+# Generate transcript-to-gene mapping from Ensembl database
+tx2gene <- transcripts(EnsDb.Hsapiens.v86, columns = c("tx_id", "gene_id"), return.type = "data.frame")
+
+# Save tx2gene mapping for later use
+write.csv(tx2gene, "tx2gene.csv", row.names = FALSE)
+
+# Load tx2gene mapping
+tx2gene <- read.csv("tx2gene.csv", header = TRUE)
+
+# Get correct folders (only `_quant`, not `_quant(1)`)
+folders <- dir(pattern = "SRR[0-9]+_quant$", full.names = TRUE)
+
+# Extract sample names
+samples <- sub("_quant$", "", basename(folders))  
+
+# Construct paths to `abundance.tsv`
+files <- file.path(folders, "abundance.tsv")  
+names(files) <- samples  
+
+# Debugging: Verify paths
+print(files)
+print(file.exists(files))
+
+# Run tximport using tx2gene mapping
+txi.kallisto <- tximport(files, type = "kallisto", txOut = FALSE, tx2gene = tx2gene)
+
+# Check imported structure
+str(txi.kallisto)
+
+# View a preview of the imported counts
+head(txi.kallisto$counts)
+
+```
+

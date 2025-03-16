@@ -1,0 +1,248 @@
+---
+title: "heatmap"
+format: html
+---
+
+```{r}
+# Load required libraries
+library(bio3d)
+library(gplots)  # For heatmap visualization
+```
+
+```{r}
+# Load Bio3D before calling read.fasta()
+library(bio3d)
+
+# Read the aligned sequences
+alignment <- read.fasta("AGO2_sequences.fasta.txt")
+
+# Compute the sequence identity matrix
+identity_matrix <- seqidentity(alignment)
+
+```
+
+```{r}
+# Set up color gradient (red = high identity, yellow = low identity)
+heatmap_colors <- colorRampPalette(c("red", "orange", "yellow"))(100)
+
+# Generate the heatmap
+heatmap.2(identity_matrix, 
+          trace = "none", 
+          col = heatmap_colors, 
+          dendrogram = "both", 
+          margins = c(12, 12),  # Reduce margins to fit plot
+          key = TRUE, 
+          keysize = 1.2, 
+          density.info = "none", 
+          labRow = rownames(identity_matrix), 
+          labCol = colnames(identity_matrix))
+
+
+```
+
+```{r}
+# Save as PNG
+png("AGO2_heatmap.png", width = 1200, height = 1000)
+heatmap.2(identity_matrix, trace = "none", col = heatmap_colors, dendrogram = "both",
+          margins = c(10, 10), key = TRUE, keysize = 1.2, density.info = "none",
+          labRow = rownames(identity_matrix), labCol = colnames(identity_matrix))
+dev.off()
+
+```
+
+```{r}
+library(bio3d)
+
+# Load your alignment file (FASTA or Clustal format)
+alignment <- read.fasta("AGO2_sequences.fasta.txt")
+
+# Compute sequence identity matrix
+identity_matrix <- seqidentity(alignment)
+
+# Find the sequence with the highest overall identity
+max_identity_index <- which.max(rowMeans(identity_matrix))
+best_sequence <- alignment$ali[max_identity_index, ]  # Select best representative sequence
+
+```
+
+```{r}
+# Perform PDB BLAST search
+pdb_hits <- blast.pdb(best_sequence)
+```
+
+```{r}
+# Display search results
+print(dim(pdb_hits$hit.tbl))  # Check the number of hits
+print(head(pdb_hits$hit.tbl)) # Print top hits for review
+
+# Extract top 3 unique PDB hits
+top_hits <- head(pdb_hits$hit.tbl, 3)
+
+# Extract PDB IDs from the 'subjectids' column
+if ("subjectids" %in% colnames(top_hits)) {
+    pdb_ids <- as.character(top_hits$subjectids)  # Convert to character vector
+} else {
+    stop("PDB ID column not found in top_hits")
+}
+
+# Print extracted PDB IDs for verification
+print(pdb_ids)
+
+# Ensure valid PDB IDs before proceeding
+if (length(pdb_ids) > 0 && all(!is.na(pdb_ids)) && all(nchar(pdb_ids) > 0)) {
+    
+    # Get additional annotations for these hits
+    annotations <- pdb.annotate(pdb_ids)
+
+    # Debugging step: Check if annotations are retrieved
+    print(dim(annotations)) 
+    print(annotations)
+
+    # Ensure annotations are not empty
+    if (nrow(annotations) == 0) {
+        stop("No annotation data found. Check PDB IDs or try different ones.")
+    }
+
+    # Ensure row counts match before creating the final table
+    if (nrow(annotations) == length(pdb_ids)) {
+        top_pdb_results <- data.frame(
+            ID = pdb_ids,
+            Structure = annotations$structureId,
+            Chain = annotations$chainId,
+            Type = annotations$macromoleculeType,
+            Length = annotations$chainLength,
+            Evalue = top_hits$value,
+            Identity = top_hits$identity
+        )
+
+        # Print the results table
+        print(top_pdb_results)
+
+        # Save the table as CSV for report submission
+        write.csv(top_pdb_results, "Top_PDB_Hits.csv", row.names = FALSE)
+    } else {
+        stop("Mismatch in rows: PDB IDs vs annotations. Verify annotation output.")
+    }
+} else {
+    stop("No valid PDB IDs found for annotation")
+}
+```
+
+```{r}
+write.csv(top_pdb_results, "Top_PDB_Hits.csv", row.names = FALSE)
+```
+
+```{r}
+# Extract top 3 unique PDB hits
+top_hits <- head(pdb_hits$hit.tbl, 3)  # Correctly select from hit.tbl
+
+# Extract PDB IDs (from subjectids)
+if ("subjectids" %in% colnames(top_hits)) {
+    pdb_ids <- as.character(top_hits$subjectids)  # Extract PDB IDs
+} else {
+    stop("PDB ID column not found in top_hits")
+}
+
+# Print extracted PDB IDs for verification
+print(pdb_ids)
+
+```
+
+```{r}
+# Load necessary library
+library(bio3d)
+
+# Load sequence alignment
+alignment <- read.fasta("AGO2_sequences.fasta.txt")
+
+# Compute sequence identity matrix
+identity_matrix <- seqidentity(alignment)
+
+# Find the best representative sequence
+max_identity_index <- which.max(rowMeans(identity_matrix))
+best_sequence <- alignment$ali[max_identity_index, ]
+
+# Perform PDB BLAST search
+pdb_hits <- blast.pdb(best_sequence)
+
+# Display search results
+print(dim(pdb_hits$hit.tbl))  # Check if any hits are found
+print(head(pdb_hits$hit.tbl)) # Preview first few hits
+
+# Extract top 3 unique PDB hits
+top_hits <- head(pdb_hits$hit.tbl, 3)
+
+# Extract PDB IDs from the 'subjectids' column
+if ("subjectids" %in% colnames(top_hits)) {
+    pdb_ids <- as.character(top_hits$subjectids)  
+} else {
+    stop("PDB ID column not found in top_hits")
+}
+
+# Print extracted PDB IDs for debugging
+print(pdb_ids)
+
+# Ensure valid PDB IDs before annotation
+if (length(pdb_ids) > 0 && all(!is.na(pdb_ids)) && all(nchar(pdb_ids) > 0)) {
+    
+    # Get additional annotations
+    annotations <- pdb.annotate(pdb_ids)
+
+    # Debugging step: Check if annotations are retrieved
+    print(dim(annotations)) 
+    print(annotations)
+
+    # Ensure annotation results are not empty
+    if (is.null(annotations) || nrow(annotations) == 0) {
+        warning("No annotation data found. Skipping annotation step.")
+        top_pdb_results <- data.frame(
+            ID = pdb_ids,
+            Evalue = top_hits$value,
+            Identity = top_hits$identity
+        )
+    } else {
+        # Ensure row counts match before creating the final table
+        if (nrow(annotations) == length(pdb_ids)) {
+            top_pdb_results <- data.frame(
+                ID = pdb_ids,
+                Structure = annotations$structureId,
+                Chain = annotations$chainId,
+                Type = annotations$macromoleculeType,
+                Length = annotations$chainLength,
+                Evalue = top_hits$value,
+                Identity = top_hits$identity
+            )
+        } else {
+            warning("Mismatch in rows: PDB IDs vs annotations. Using available data.")
+            top_pdb_results <- data.frame(
+                ID = pdb_ids,
+                Evalue = top_hits$value,
+                Identity = top_hits$identity
+            )
+        }
+    }
+
+    # Print results table
+    print(top_pdb_results)
+
+    # Save the table as CSV
+    write.csv(top_pdb_results, "Top_PDB_Hits.csv", row.names = FALSE)
+
+} else {
+    stop("No valid PDB IDs found for annotation")
+}
+
+```
+
+```{r}
+# Ensure PDB IDs are extracted correctly
+print(pdb_ids)
+
+# Retrieve annotation details for these PDB IDs
+annotations <- pdb.annotate(pdb_ids)
+
+# Print annotations to check available information
+print(annotations)
+
+```
+
